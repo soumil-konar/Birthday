@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 03: The Soundtrack</title>
+    <style>
+        :root {
+            --primary-color: #ff6b81;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- Layout --- */
+        .container {
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h2 { font-size: 2rem; margin-bottom: 10px; font-weight: 700; }
+        .instruction { margin-bottom: 30px; opacity: 0.9; line-height: 1.5; }
+
+        /* --- The Cassette Player Card --- */
+        .player-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+        }
+
+        /* --- Track Rows --- */
+        .track-row {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+        
+        .track-row:hover { background: rgba(0,0,0,0.3); }
+
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            border: none;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 15px;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+        
+        .play-btn:hover { transform: scale(1.1); }
+        .play-btn.playing { background: var(--primary-color); color: white; }
+
+        .track-info { text-align: left; flex-grow: 1; }
+        .track-title { font-weight: bold; display: block; font-size: 1rem; }
+        .track-desc { font-size: 0.8rem; opacity: 0.7; }
+
+        /* --- Visualizer Animation --- */
+        .visualizer {
+            display: flex;
+            align-items: flex-end;
+            height: 20px;
+            gap: 3px;
+            opacity: 0.5;
+        }
+        .bar { width: 4px; background: white; border-radius: 2px; height: 5px; }
+        
+        /* Animation applied when class 'active' is added */
+        .playing .visualizer .bar { animation: bounce 1s infinite ease-in-out; }
+        .playing .visualizer .bar:nth-child(1) { animation-delay: 0.1s; }
+        .playing .visualizer .bar:nth-child(2) { animation-delay: 0.3s; }
+        .playing .visualizer .bar:nth-child(3) { animation-delay: 0.5s; }
+
+        @keyframes bounce {
+            0%, 100% { height: 5px; }
+            50% { height: 20px; }
+        }
+
+        /* --- Input Section --- */
+        .riddle-box {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        input:focus { border-color: var(--primary-color); }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>LEVEL 03</h2>
+        <p class="instruction">Listen closely. One of these songs holds the key.<br>Specifically, <strong>Track #2</strong>.</p>
+
+        <div class="player-card">
+            
+            <div class="track-row" id="row1">
+                <button class="play-btn" onclick="togglePlay('track1', 'row1')">▶</button>
+                <div class="track-info">
+                    <span class="track-title">01. The Favorite</span>
+                    <span class="track-desc">Your morning jam</span>
+                </div>
+                <div class="visualizer">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <audio id="track1" src="music/song1.mp3"></audio> 
+            </div>
+
+            <div class="track-row" id="row2">
+                <button class="play-btn" onclick="togglePlay('track2', 'row2')">▶</button>
+                <div class="track-info">
+                    <span class="track-title">02. The Memory</span>
+                    <span class="track-desc">Remember Goa?</span>
+                </div>
+                <div class="visualizer">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <audio id="track2" src="music/song2.mp3"></audio>
+            </div>
+
+            <div class="track-row" id="row3">
+                <button class="play-btn" onclick="togglePlay('track3', 'row3')">▶</button>
+                <div class="track-info">
+                    <span class="track-title">03. The Message</span>
+                    <span class="track-desc">Dedication to you</span>
+                </div>
+                <div class="visualizer">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                </div>
+                <audio id="track3" src="music/song3.mp3"></audio>
+            </div>
+
+        </div>
+
+        <div class="riddle-box">
+            <p><strong>The Question:</strong><br> In Track 2, what is the <u>last word</u> sung in the chorus?</p>
+            <input type="text" id="answerInput" placeholder="Type the lyrics...">
+            <button class="submit-btn" onclick="checkAnswer()">Unlock Level 4</button>
+            <p id="errorMsg" style="color:red; font-size:0.8rem; margin-top:5px; display:none;">Not quite right!</p>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // The answer to the question about Track 2 (lowercase)
+        const validAnswers = ["forever", "love", "together"]; 
+        
+        // --- AUDIO PLAYER LOGIC ---
+        let currentAudio = null;
+        let currentRow = null;
+
+        function togglePlay(audioId, rowId) {
+            const audio = document.getElementById(audioId);
+            const row = document.getElementById(rowId);
+            const btn = row.querySelector('.play-btn');
+
+            if (!audio.paused) {
+                audio.pause();
+                row.classList.remove('playing');
+                btn.innerText = "▶";
+                return;
+            }
+
+            if (currentAudio && currentAudio !== audio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0; // Rewind to start
+                
+                // Reset the UI of the old song
+                if (currentBtn) {
+                    currentBtn.innerText = "▶";
+                    currentBtn.closest('.track-row').classList.remove('playing');
+                }
+            }
+
+            audio.play();
+            row.classList.add('playing');
+            btn.innerText = "||"; // Pause symbol
+
+            // Update global tracking variables
+            currentAudio = audio;
+            currentBtn = btn;
+
+            // 4. CLEANUP: When song finishes automatically
+            audio.onended = function() {
+                row.classList.remove('playing');
+                btn.innerText = "▶";
+                currentAudio = null;
+                currentBtn = null;
+            };
+        }
+
+        // --- ANSWER CHECKING ---
+        function checkAnswer() {
+            const userAns = document.getElementById('answerInput').value.toLowerCase().trim();
+            
+            if (validAnswers.includes(userAns)) {
+                // Success
+                document.querySelector('.submit-btn').innerText = "Correct! Loading...";
+                document.querySelector('.submit-btn').style.background = "#2ed573"; // Green
+                
+                setTimeout(() => {
+                    alert("Redirecting to Level 4..."); 
+                    window.location.href = "level4.html"; 
+                }, 1000);
+            } else {
+                // Failure
+                document.getElementById('errorMsg').style.display = "block";
+                
+                // Shake animation
+                const box = document.querySelector('.riddle-box');
+                box.style.transform = "translateX(5px)";
+                setTimeout(() => box.style.transform = "translateX(-5px)", 100);
+                setTimeout(() => box.style.transform = "translateX(0)", 200);
+            }
+        }
+    </script>
+</body>
+</html>

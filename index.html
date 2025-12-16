@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Road to 22</title>
+    <style>
+        /* --- CSS Reset & Base Variables --- */
+        :root {
+            --primary-color: #ff6b81; /* Soft Pink */
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Floating Particles Animation --- */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            animation: float 10s infinite ease-in-out;
+            z-index: 0;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        /* --- Main Card (Glassmorphism) --- */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            z-index: 10;
+            color: var(--text-color);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+
+        h1 { margin-bottom: 1rem; font-weight: 300; letter-spacing: 2px; }
+        h2 { font-size: 2.5rem; margin-bottom: 1.5rem; font-weight: 700; }
+        p { margin-bottom: 2rem; opacity: 0.9; line-height: 1.6; }
+
+        /* --- Countdown Timer --- */
+        #countdown {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+        .time-box {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            min-width: 60px;
+        }
+        .time-box span { display: block; font-size: 0.8rem; opacity: 0.8; font-weight: normal;}
+
+        /* --- Input & Button --- */
+        .input-group { position: relative; width: 100%; }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 1rem;
+            outline: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        input:focus { transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
+
+        button {
+            margin-top: 1.5rem;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 50px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
+        }
+
+        button:hover { background: #ff4757; transform: scale(1.05); }
+
+        .error-msg {
+            color: #ff6b81;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none; /* Hidden by default */
+            font-weight: bold;
+        }
+        
+        /* Hiding content until countdown finishes (optional logic) */
+        .locked-content { filter: blur(5px); pointer-events: none; transition: all 1s ease;}
+        .unlocked-content { filter: blur(0); pointer-events: all; }
+
+    </style>
+</head>
+<body>
+
+    <div class="particle" style="top: 10%; left: 20%; width: 50px; height: 50px;"></div>
+    <div class="particle" style="top: 70%; left: 80%; width: 80px; height: 80px; animation-duration: 15s;"></div>
+    <div class="particle" style="top: 40%; left: 60%; width: 30px; height: 30px; animation-duration: 12s;"></div>
+
+    <div class="card">
+        <h1>LEVEL 01</h1>
+        <h2>The Gatekeeper</h2>
+        
+        <div id="countdown">
+            <div class="time-box"><div id="days">00</div><span>Days</span></div>
+            <div class="time-box"><div id="hours">00</div><span>Hours</span></div>
+            <div class="time-box"><div id="minutes">00</div><span>Mins</span></div>
+            <div class="time-box"><div id="seconds">00</div><span>Secs</span></div>
+        </div>
+
+        <p id="riddle-text">To enter the road to 22, tell me: <br><strong>Where did we have our first official date?</strong></p>
+
+        <div class="input-group">
+            <input type="password" id="passInput" placeholder="Type your answer...">
+            <div class="error-msg" id="errorMsg">Wrong answer, try again!</div>
+        </div>
+
+        <button onclick="checkPassword()">Unlock</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const targetDate = new Date(2025, 11, 22, 0, 0, 0).getTime();
+        
+        // 2. Set the correct passwords (lowercase). Array allows multiple correct variations.
+        const correctAnswers = ["Dhakeshwari", "central park", "dhakeshwari", "Kalyani", "kalyani"]; 
+
+        // 3. Where to go after success? (Next HTML file)
+        const nextPageUrl = "level2.html"; 
+
+        // --- COUNTDOWN LOGIC ---
+        const countdownInterval = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            // Time calculations
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Display result
+            document.getElementById("days").innerText = days < 10 ? "0" + days : days;
+            document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
+            document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
+
+            // If countdown is finished
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                document.getElementById("countdown").innerHTML = "<h3>IT'S TIME! âœ¨</h3>";
+            }
+        }, 1000);
+
+        // --- PASSWORD LOGIC ---
+        function checkPassword() {
+            const input = document.getElementById("passInput").value.toLowerCase().trim();
+            const errorMsg = document.getElementById("errorMsg");
+            
+            // Simple validation check
+            if (correctAnswers.includes(input)) {
+                // Success Animation or Redirect
+                errorMsg.style.display = "none";
+                document.querySelector("button").innerText = "Unlocking...";
+                document.querySelector("button").style.background = "#4cd137"; // Success Green
+                
+                setTimeout(() => {
+                    // Redirect to next level
+                    window.location.href = nextPageUrl; 
+                    alert("Correct! Redirecting to Level 2..."); // Replace with window.location.href
+                }, 1000);
+            } else {
+                // Error State
+                errorMsg.style.display = "block";
+                
+                // Shake animation for feedback
+                const card = document.querySelector(".card");
+                card.style.transform = "translateX(10px)";
+                setTimeout(() => card.style.transform = "translateX(-10px)", 100);
+                setTimeout(() => card.style.transform = "translateX(0)", 200);
+            }
+        }
+
+        // Allow "Enter" key to submit
+        document.getElementById("passInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                checkPassword();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Pritha!</title>
+    <style>
+        :root {
+            --primary-color: #ff6b81;
+            --bg-gradient: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-color: #2c3e50;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* --- Canvas for Confetti --- */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        p.intro {
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        /* --- Content Cards --- */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.8s forwards;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.2s; } /* Stagger animations */
+        .card:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { color: var(--primary-color); margin-top: 0; }
+
+        /* --- Video Container --- */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 15px;
+            background: #000;
+        }
+
+        .video-wrapper iframe, .video-wrapper video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+
+        /* --- Spotify Button --- */
+        .spotify-btn {
+            display: inline-flex;
+            align-items: center;
+            background: #1DB954; /* Spotify Green */
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+            box-shadow: 0 5px 15px rgba(29, 185, 84, 0.4);
+        }
+        .spotify-btn:hover { transform: scale(1.05); }
+
+        /* --- Gift Reveal --- */
+        .spoiler-box {
+            background: #eee;
+            color: transparent;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: all 0.5s ease;
+        }
+        
+        .spoiler-box::after {
+            content: "Tap to Reveal Gift Location";
+            color: #555;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+        }
+
+        .spoiler-box.revealed {
+            background: #fff0f3; /* Light pink */
+            color: #333;
+            border: 2px dashed var(--primary-color);
+        }
+        
+        .spoiler-box.revealed::after { content: ""; }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        <h1>Happy 22nd Birthday!</h1>
+        <p class="intro">You made it to the end. Here is my heart. ❤️</p>
+
+        <div class="card">
+            <h2>For You</h2>
+            <div class="video-wrapper">
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+            <p style="margin-top:15px">A small message from across the distance.</p>
+        </div>
+
+        <div class="card">
+            <h2>The Soundtrack of Us</h2>
+            <p>I curated this playlist for your 22nd year.</p>
+            <a href="https://open.spotify.com/playlist/7o3QGZATeMwZd0m22Lfito?si=abb9b2c680e2499b" target="_blank" class="spotify-btn">
+                Listen on Spotify ♫
+            </a>
+        </div>
+
+        <div class="card">
+            <h2>One Last Thing...</h2>
+            <p>Your real gift is waiting.</p>
+            
+            <div class="spoiler-box" onclick="this.classList.add('revealed')">
+                <h3>Check your email inbox!</h3>
+                <p>I sent you a digital gift card for that store you love.</p>
+                <p>(Or: Look inside the bottom drawer of your desk!)</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFETTI LOGIC (Simple Canvas Script) ---
+        const canvas = document.getElementById("confetti-canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const pieces = [];
+        const colors = ['#ff6b81', '#ff4757', '#2ed573', '#1e90ff', '#ffa502'];
+
+        function createPiece() {
+            return {
+                x: Math.random() * canvas.width,
+                y: Math.random() * -100, // Start above screen
+                w: Math.random() * 10 + 5,
+                h: Math.random() * 10 + 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speed: Math.random() * 3 + 2,
+                rotation: Math.random() * 360
+            };
+        }
+
+        for (let i = 0; i < 150; i++) {
+            pieces.push(createPiece());
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pieces.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+
+                p.y += p.speed;
+                p.rotation += 2;
+
+                if (p.y > canvas.height) {
+                    p.y = -10;
+                    p.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

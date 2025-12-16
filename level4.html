@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level 04: The Grid</title>
+    <style>
+        :root {
+            --primary-color: #ff6b81;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        h2 { font-size: 2rem; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        p.subtitle { margin-bottom: 20px; opacity: 0.9; font-size: 1rem; }
+
+        /* --- The Grid --- */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem; /* For the ❤️ emoji */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: white;
+            font-weight: bold;
+        }
+
+        .box:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .box.solved { background: rgba(255, 107, 129, 0.4); cursor: default; transform: none; border-color: #ff6b81;}
+        .box.number { font-size: 1.5rem; opacity: 0.5; }
+
+        /* --- The Question Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+        .modal-card {
+            background: white;
+            color: #333;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-card { transform: scale(1); }
+
+        .modal-card h3 { color: var(--primary-color); margin-bottom: 15px; }
+        .modal-card input {
+            width: 100%; padding: 12px; margin: 15px 0;
+            border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; outline: none;
+        }
+        .modal-card input:focus { border-color: var(--primary-color); }
+        
+        .btn-group { display: flex; gap: 10px; justify-content: center; }
+        
+        button {
+            padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .submit-btn { background: var(--primary-color); color: white; flex: 2; }
+        .close-btn { background: #eee; color: #555; flex: 1; }
+        
+        /* --- Win Message --- */
+        .win-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 200;
+            display: none; /* Hidden by default */
+        }
+        .win-content { text-align: center; animation: popIn 0.5s ease; }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        
+        .final-btn {
+            margin-top: 20px; padding: 15px 40px; font-size: 1.2rem;
+            background: #2ed573; color: white; border-radius: 50px;
+            box-shadow: 0 0 20px #2ed573;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h2>LEVEL 04</h2>
+    <p class="subtitle">Get 3 hearts in a row to win.</p>
+
+    <div class="game-board">
+        <div class="box number" onclick="handleClick(0)">1</div>
+        <div class="box number" onclick="handleClick(1)">2</div>
+        <div class="box number" onclick="handleClick(2)">3</div>
+        <div class="box number" onclick="handleClick(3)">4</div>
+        <div class="box number" onclick="handleClick(4)">5</div>
+        <div class="box number" onclick="handleClick(5)">6</div>
+        <div class="box number" onclick="handleClick(6)">7</div>
+        <div class="box number" onclick="handleClick(7)">8</div>
+        <div class="box number" onclick="handleClick(8)">9</div>
+    </div>
+
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-card">
+            <h3 id="modalQuestion">Question goes here?</h3>
+            <input type="text" id="modalInput" placeholder="Your Answer">
+            <div id="feedback" style="font-size: 0.9rem; margin-bottom: 10px; display: none;"></div>
+            <div class="btn-group">
+                <button class="close-btn" onclick="closeModal()">Cancel</button>
+                <button class="submit-btn" onclick="checkAnswer()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="win-overlay" id="winScreen">
+        <div class="win-content">
+            <h1 style="font-size: 4rem;">❤️ ❤️ ❤️</h1>
+            <h2>You know me so well.</h2>
+            <button class="final-btn" onclick="window.location.href='level5.html'">Open Present</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION: YOUR QUESTIONS AND ANSWERS ---
+        // Edit this list! Make sure answers are lowercase.
+        const quizData = [
+            { q: "What is my absolute favorite food?", a: "biryani" },     // Box 1
+            { q: "What is my shoe size?", a: "12" },                       // Box 2
+            { q: "Which football club do I support?", a: "manchester united" }, // Box 3
+            { q: "What is the name of my first pet?", a: "bruno" },       // Box 4
+            { q: "Where did we first hold hands?", a: "sealdah station" },  // Box 5
+            { q: "What is my favorite color?", a: "grey" },               // Box 6
+            { q: "What drink do I order at a cafe?", a: "iced americano" },   // Box 7
+            { q: "What is my middle name?", a: "kumar" },                 // Box 8
+            { q: "When is our anniversary (DD/MM)?", a: "14/02" }        // Box 9
+        ];
+
+        // --- GAME LOGIC ---
+        let currentBoxIndex = null;
+        let boardState = [null, null, null, null, null, null, null, null, null]; // Tracks solved boxes
+        
+        // Winning combinations (rows, cols, diagonals)
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        const boxes = document.querySelectorAll('.box');
+        const modal = document.getElementById('quizModal');
+        const questionText = document.getElementById('modalQuestion');
+        const inputField = document.getElementById('modalInput');
+        const feedback = document.getElementById('feedback');
+
+        function handleClick(index) {
+            // If already solved, do nothing
+            if (boardState[index] === 'solved') return;
+
+            currentBoxIndex = index;
+            
+            // Set Modal Content
+            questionText.innerText = quizData[index].q;
+            inputField.value = "";
+            feedback.style.display = "none";
+            
+            // Show Modal
+            modal.classList.add('active');
+            inputField.focus();
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            currentBoxIndex = null;
+        }
+
+        function checkAnswer() {
+            if (currentBoxIndex === null) return;
+
+            const userAns = inputField.value.trim().toLowerCase();
+            const correctAns = quizData[currentBoxIndex].a.toLowerCase();
+
+            if (userAns === correctAns) {
+                // Correct!
+                markSolved(currentBoxIndex);
+                closeModal();
+                checkWinCondition();
+            } else {
+                // Wrong
+                feedback.style.display = "block";
+                feedback.innerText = "Nope! Try again.";
+                feedback.style.color = "#ff6b81";
+                
+                // Shake animation
+                const card = document.querySelector('.modal-card');
+                card.style.transform = "translateX(5px)";
+                setTimeout(() => card.style.transform = "translateX(-5px)", 100);
+                setTimeout(() => card.style.transform = "translateX(0)", 200);
+            }
+        }
+
+        function markSolved(index) {
+            boardState[index] = 'solved';
+            boxes[index].classList.add('solved');
+            boxes[index].classList.remove('number');
+            boxes[index].innerHTML = "❤️"; // Change number to heart
+        }
+
+        function checkWinCondition() {
+            let won = false;
+            
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    won = true;
+                    break;
+                }
+            }
+
+            if (won) {
+                setTimeout(() => {
+                    document.getElementById('winScreen').style.display = "flex";
+                }, 500);
+            }
+        }
+
+        // Allow Enter key to submit
+        inputField.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                checkAnswer();
+            }
+        });
+
+    </script>
+</body>
+</html>
