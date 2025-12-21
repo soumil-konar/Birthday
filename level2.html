@@ -132,7 +132,6 @@
 
     <script>
         // --- CONFIGURATION ---
-        // Tip: Use a square image for best results, or it will be squashed.
         const imageUrl = 'images/puzzle.jpg';
         
         // 2. Grid Size (3x3 is standard)
@@ -143,8 +142,6 @@
         let pieces = [];
         let selectedPiece = null;
 
-        // Calculate positions
-        // We create an array of objects representing the correct order: [{x:0, y:0}, {x:1, y:0}...]
         let correctOrder = [];
         for (let y = 0; y < size; y++) {
             for (let x = 0; x < size; x++) {
@@ -154,11 +151,8 @@
 
         // Initialize Game
         function initGame() {
-            // Create a shuffled version of the order
             let shuffled = [...correctOrder];
             
-            // Simple shuffle algorithm
-            // We ensure it's not accidentally solved already
             do {
                 shuffled.sort(() => Math.random() - 0.5);
             } while (isSolved(shuffled));
@@ -167,22 +161,19 @@
         }
 
         function renderBoard(currentOrder) {
-            board.innerHTML = ''; // Clear board
+            board.innerHTML = ''; 
             pieces = [];
 
             currentOrder.forEach((pos, index) => {
                 const piece = document.createElement('div');
                 piece.classList.add('piece');
                 
-                // CSS Trick: Shift background image to show only the slice for this piece's LOGICAL position
-                // The 'pos' object tells us WHICH part of the image this tile should show
                 piece.style.backgroundImage = `url('${imageUrl}')`;
                 piece.style.backgroundPosition = `-${pos.x * 100}px -${pos.y * 100}px`;
                 
-                // Store current data for logic
                 piece.dataset.currentX = pos.x;
                 piece.dataset.currentY = pos.y;
-                piece.dataset.index = index; // Current visual slot (0-8)
+                piece.dataset.index = index; 
 
                 piece.addEventListener('click', () => handlePieceClick(piece, index));
                 
@@ -192,6 +183,11 @@
         }
 
         function handlePieceClick(clickedPiece, index) {
+            // --- NEW: Start Music on User Interaction ---
+            if (window.startMusic) {
+                window.startMusic();
+            }
+
             if (selectedPiece === null) {
                 // Select first piece
                 selectedPiece = clickedPiece;
@@ -208,10 +204,6 @@
         }
 
         function swapPieces(pieceA, pieceB) {
-            // Swap DOM elements visually? No, easier to just swap background positions and data
-            // Actually, for the logic to hold, we need to swap the DATA in the array representation
-            // But visually swapping style.backgroundPosition is the easiest "cheat" way to do it
-            
             const tempBg = pieceA.style.backgroundPosition;
             const tempDataX = pieceA.dataset.currentX;
             const tempDataY = pieceA.dataset.currentY;
@@ -228,9 +220,6 @@
         }
 
         function checkWin() {
-            // Check if every piece is in its correct original slot
-            // Slot 0 should have x=0, y=0. Slot 1 should have x=1, y=0, etc.
-            
             let isWin = true;
             const allPieces = document.querySelectorAll('.piece');
 
@@ -250,7 +239,6 @@
             }
         }
 
-        // Helper to ensure we don't start with a solved puzzle
         function isSolved(arr) {
             return arr.every((pos, i) => pos.x === i % size && pos.y === Math.floor(i / size));
         }
@@ -259,5 +247,14 @@
         initGame();
 
     </script>
+
+    <audio id="bg-music" loop>
+        <source src="music/background.mp3" type="audio/mpeg">
+    </audio>
+    <script src="music/music.js"></script>
+
+    </script>
+    </script>
+
 </body>
 </html>

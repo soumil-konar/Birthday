@@ -14,7 +14,7 @@
             height: 100%;
             background-color: #050505;
             overflow: hidden;
-            touch-action: none; /* Prevent zooming/scrolling on mobile */
+            touch-action: none;
         }
         canvas {
             display: block;
@@ -28,7 +28,7 @@
             transform: translate(-50%, -50%);
             color: rgba(255, 182, 193, 0.8);
             font-family: sans-serif;
-            font-size: 4vmin; /* Responsive font size */
+            font-size: 4vmin;
             letter-spacing: 2px;
             pointer-events: none;
             user-select: none;
@@ -38,38 +38,21 @@
         }
         #message-container {
             position: absolute;
-            /* Layout handled by JS media queries logic */
             color: #fff;
             font-family: 'Courier Prime', monospace;
             z-index: 5;
             pointer-events: none;
             text-shadow: 0 0 5px rgba(255, 105, 180, 0.5);
         }
-        /* Portrait Layout (Mobile) */
-        .portrait-msg {
-            top: 10%;
-            left: 10%;
-            width: 80%;
-            font-size: 5vmin;
-            line-height: 1.5;
-        }
-        /* Landscape Layout (Desktop) */
-        .landscape-msg {
-            top: 30%;
-            left: 10%;
-            width: 45%;
-            font-size: 3.5vmin;
-            line-height: 1.6;
-        }
+        .portrait-msg { top: 10%; left: 10%; width: 80%; font-size: 5vmin; line-height: 1.5; }
+        .landscape-msg { top: 30%; left: 10%; width: 45%; font-size: 3.5vmin; line-height: 1.6; }
 
         .typewriter-cursor::after {
             content: '|';
             animation: blink 1s step-start infinite;
             color: #ff69b4;
         }
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -83,23 +66,16 @@
     const ctx = canvas.getContext('2d');
     const instruction = document.getElementById('instruction');
     const msgContainer = document.getElementById('message-container');
-
-    // --- Performance Optimization: Cache Hearts ---
-    // Drawing bezier curves 1000 times a frame kills mobile battery/fps.
-    // We draw them once to small invisible canvases and reuse them.
     const heartCache = {};
     const romanticColors = ['#ff0055', '#ff4d88', '#ff99bb', '#cc0044', '#e60073', '#ffccdd', '#ff3366'];
 
     function precomputeHearts() {
         romanticColors.forEach(color => {
             const c = document.createElement('canvas');
-            c.width = 50; // High res for scaling down
-            c.height = 50;
+            c.width = 50; c.height = 50;
             const cx = c.getContext('2d');
-            cx.translate(25, 25);
-            cx.scale(1.5, 1.5);
-            cx.beginPath();
-            cx.fillStyle = color;
+            cx.translate(25, 25); cx.scale(1.5, 1.5);
+            cx.beginPath(); cx.fillStyle = color;
             cx.moveTo(0, 0);
             cx.bezierCurveTo(-10, -10, -20, 5, 0, 25);
             cx.bezierCurveTo(20, 5, 10, -10, 0, 0);
@@ -109,15 +85,10 @@
     }
     precomputeHearts();
 
-    // --- Audio Context ---
     let audioCtx;
     function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if(audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        if(audioCtx.state === 'suspended') { audioCtx.resume(); }
     }
 
     function playTypeSound() {
@@ -129,110 +100,62 @@
         osc.frequency.exponentialRampToValueAtTime(100, t + 0.03); 
         gain.gain.setValueAtTime(0.05, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(t);
-        osc.stop(t + 0.03);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.03);
     }
 
-    let width, height, dpr;
-    let isPortrait = false;
-    
-    const TARGET_LEAVES = 800; // Slightly reduced for mobile stability (still looks dense)
+    let width, height, dpr, isPortrait = false;
+    const TARGET_LEAVES = 800; 
     const messages = [
-        "Hey Pritha ❤️",
-        "Happy Birthday 🎂",
-        "May God Bless u ✨",
-        "And give u happiness",
-        "Just saying... you're pretty 🫶"
+        "Hey Pritha ❤️", "Happy Birthday 🎂", "May God Bless u ✨", "And give u happiness", "Just saying... you're pretty 🫶"
     ];
 
     const state = {
-        phase: 'floating', 
-        frame: 0,
-        groundY: 0,
-        groundWidth: 0,
-        treeData: null,
-        growthProgress: 0,
-        shiftX: 0, 
-        shiftY: 0,
-        currentLineIndex: 0,
-        currentCharIndex: 0,
-        lastTypeTime: 0,
-        isRedirecting: false // New flag to prevent multiple timeouts
+        phase: 'floating', frame: 0, groundY: 0, groundWidth: 0, treeData: null,
+        growthProgress: 0, shiftX: 0, shiftY: 0, currentLineIndex: 0, currentCharIndex: 0,
+        lastTypeTime: 0, isRedirecting: false 
     };
 
-    const balloon = {
-        x: 0, y: 0, baseY: 0, vy: 0, stringLen: 80, scaleX: 1, scaleY: 1
-    };
+    const balloon = { x: 0, y: 0, baseY: 0, vy: 0, stringLen: 80, scaleX: 1, scaleY: 1 };
 
     function resize() {
-        // High DPI handling
         dpr = window.devicePixelRatio || 1;
-        width = window.innerWidth;
-        height = window.innerHeight;
-        
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx.scale(dpr, dpr); // Normalize coord system
-        
+        width = window.innerWidth; height = window.innerHeight;
+        canvas.width = width * dpr; canvas.height = height * dpr;
+        ctx.scale(dpr, dpr); 
         isPortrait = height > width;
         state.groundY = height - (isPortrait ? height * 0.15 : 50);
-
-        // Adjust Text Layout
         msgContainer.className = isPortrait ? 'portrait-msg' : 'landscape-msg';
-
         if (state.phase === 'floating') {
-            balloon.x = width / 2;
-            balloon.baseY = height / 2 - 100;
+            balloon.x = width / 2; balloon.baseY = height / 2 - 100;
             instruction.style.top = (balloon.baseY + 140) + 'px';
         }
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // Optimized Draw Heart using Cache (Image Copying is fast!)
     function drawHeart(ctx, x, y, size, color, rotation = 0) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(rotation);
-        // Map size 1 to canvas size (cache is 50x50)
-        const scale = size * 0.5; 
-        ctx.scale(scale, scale);
-        // Draw the pre-rendered image centered
-        ctx.drawImage(heartCache[color], -25, -25);
-        ctx.restore();
+        ctx.save(); ctx.translate(x, y); ctx.rotate(rotation);
+        const scale = size * 0.5; ctx.scale(scale, scale);
+        ctx.drawImage(heartCache[color], -25, -25); ctx.restore();
     }
 
-    // Manual draw for balloon (needs dynamic scaling)
     function drawBalloonHeart(ctx, x, y, sx, sy, color) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(sx, sy);
-        ctx.beginPath();
-        ctx.fillStyle = color;
+        ctx.save(); ctx.translate(x, y); ctx.scale(sx, sy);
+        ctx.beginPath(); ctx.fillStyle = color;
         ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-10, -10, -20, 5, 0, 25);
         ctx.bezierCurveTo(20, 5, 10, -10, 0, 0);
-        ctx.fill();
-        ctx.restore();
+        ctx.fill(); ctx.restore();
     }
 
     function generateTree(startX, startY) {
-        const branches = [];
-        const leaves = [];
-        // Scale tree based on screen size
+        const branches = [], leaves = [];
         const baseLength = isPortrait ? height * 0.12 : height * 0.15;
-
         function grow(x, y, angle, length, depth, width) {
             const endX = x + Math.cos(angle) * length;
             const endY = y + Math.sin(angle) * length;
-
-            branches.push({
-                x: x, y: y, endX: endX, endY: endY, 
-                width: width, depth: depth, length: length
-            });
-
+            branches.push({ x: x, y: y, endX: endX, endY: endY, width: width, depth: depth, length: length });
             if (depth < 10) { 
                 const numBranches = Math.random() > 0.3 ? 2 : 3; 
                 for (let i = 0; i < numBranches; i++) {
@@ -243,50 +166,47 @@
             }
         }
         grow(startX, startY, -Math.PI / 2, baseLength, 0, isPortrait ? 10 : 14);
-
-        // Leaves Logic
         const suitableBranches = branches.filter(b => b.depth >= 3);
-        let totalLen = 0;
-        suitableBranches.forEach(b => totalLen += b.length);
-
+        let totalLen = 0; suitableBranches.forEach(b => totalLen += b.length);
         for (let i = 0; i < TARGET_LEAVES; i++) {
             let randomPos = Math.random() * totalLen;
             let targetBranch = null;
             for (const branch of suitableBranches) {
-                if (randomPos <= branch.length) {
-                    targetBranch = branch;
-                    break;
-                }
+                if (randomPos <= branch.length) { targetBranch = branch; break; }
                 randomPos -= branch.length;
             }
-
             if (targetBranch) {
                 const t = randomPos / targetBranch.length; 
                 const offset = (Math.random() - 0.5) * (isPortrait ? 20 : 30); 
                 const size = (Math.random() * 1.1 + 0.7); 
-
                 leaves.push({
                     x: targetBranch.x + (targetBranch.endX - targetBranch.x) * t + offset,
                     y: targetBranch.y + (targetBranch.endY - targetBranch.y) * t + offset,
-                    size: size,
-                    color: romanticColors[Math.floor(Math.random() * romanticColors.length)],
-                    rotation: Math.random() * Math.PI * 2,
-                    triggerDepth: targetBranch.depth
+                    size: size, color: romanticColors[Math.floor(Math.random() * romanticColors.length)],
+                    rotation: Math.random() * Math.PI * 2, triggerDepth: targetBranch.depth
                 });
             }
         }
-
         return { branches, leaves };
     }
 
     function updateTyping() {
-        // --- REDIRECTION LOGIC ADDED HERE ---
         if (state.currentLineIndex >= messages.length) {
             if (!state.isRedirecting) {
                 state.isRedirecting = true;
-                // Wait 5 seconds (5000ms), then redirect
+                
+                // --- REDIRECT LOGIC ---
                 setTimeout(() => {
-                    window.location.href = 'landing.html';
+                    // --- FORCE SAVE MUSIC TIME ---
+                    // This ensures the song picks up EXACTLY where it left off
+                    const audio = document.getElementById('bg-music');
+                    if(audio) {
+                        localStorage.setItem('birthday_song_time', audio.currentTime);
+                        localStorage.setItem('birthday_song_playing', 'true');
+                    }
+                    
+                    // Go to next page
+                    window.location.href = 'landing.html'; 
                 }, 5000);
             }
             return;
@@ -317,9 +237,7 @@
     function animate() {
         ctx.clearRect(0, 0, width, height);
         state.frame++;
-
         ctx.save();
-        // Camera Shift
         ctx.translate(state.shiftX, state.shiftY);
 
         if (state.phase === 'floating') {
@@ -332,17 +250,14 @@
             drawBalloonHeart(ctx, balloon.x, balloon.y, 3, 3, '#ff0044');
         }
         else if (state.phase === 'falling') {
-            balloon.vy += 0.8;
-            balloon.y += balloon.vy;
+            balloon.vy += 0.8; balloon.y += balloon.vy;
             ctx.beginPath();
             ctx.moveTo(balloon.x, balloon.y + 20);
             ctx.lineTo(balloon.x, balloon.y + balloon.stringLen);
             ctx.strokeStyle = '#fff'; ctx.stroke();
             drawBalloonHeart(ctx, balloon.x, balloon.y, 3, 3, '#ff0044');
             if (balloon.y >= state.groundY - 30) {
-                state.phase = 'splatting';
-                balloon.y = state.groundY - 30;
-                balloon.vy = 0;
+                state.phase = 'splatting'; balloon.y = state.groundY - 30; balloon.vy = 0;
             }
         }
         else if (state.phase === 'splatting') {
@@ -357,100 +272,64 @@
             ctx.lineTo((width/2) + state.groundWidth/2, state.groundY);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
             if (state.groundWidth >= width * 1.5) {
-                state.phase = 'growing';
-                state.treeData = generateTree(width/2, state.groundY);
+                state.phase = 'growing'; state.treeData = generateTree(width/2, state.groundY);
             }
         }
         else if (state.phase === 'growing' || state.phase === 'shifting' || state.phase === 'typing') {
-            ctx.beginPath();
-            ctx.moveTo(0 - width, state.groundY);
-            ctx.lineTo(width * 2, state.groundY);
+            ctx.beginPath(); ctx.moveTo(0 - width, state.groundY); ctx.lineTo(width * 2, state.groundY);
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
-
-            if (state.growthProgress < 1) {
-                state.growthProgress += 0.0035; 
-            } else if (state.phase === 'growing') {
-                state.phase = 'shifting';
-            }
-
+            if (state.growthProgress < 1) { state.growthProgress += 0.0035; } 
+            else if (state.phase === 'growing') { state.phase = 'shifting'; }
             const { branches, leaves } = state.treeData;
             const progressVal = state.growthProgress * 16; 
-
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#fff';
-
+            ctx.lineCap = 'round'; ctx.strokeStyle = '#fff';
             branches.forEach(b => {
                 if (progressVal > b.depth) {
-                    let bp = progressVal - b.depth;
-                    if (bp > 1) bp = 1;
-                    ctx.lineWidth = b.width;
-                    ctx.beginPath();
-                    ctx.moveTo(b.x, b.y);
-                    ctx.lineTo(b.x + (b.endX - b.x) * bp, b.y + (b.endY - b.y) * bp);
+                    let bp = progressVal - b.depth; if (bp > 1) bp = 1;
+                    ctx.lineWidth = b.width; ctx.beginPath();
+                    ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + (b.endX - b.x) * bp, b.y + (b.endY - b.y) * bp);
                     ctx.stroke();
                 }
             });
-
             leaves.forEach(leaf => {
                 if (progressVal > leaf.triggerDepth + 1) {
-                    let size = leaf.size;
-                    let age = progressVal - (leaf.triggerDepth + 1);
-                    let popFactor = Math.min(1, age * 4); 
-                    size *= popFactor;
+                    let size = leaf.size; let age = progressVal - (leaf.triggerDepth + 1);
+                    let popFactor = Math.min(1, age * 4); size *= popFactor;
                     const sway = Math.sin(Date.now()*0.001 + leaf.x * 0.01) * 0.2;
-                    // Use optimized drawer
                     drawHeart(ctx, leaf.x, leaf.y, size, leaf.color, leaf.rotation + sway);
                 }
             });
-
             if (state.phase === 'shifting') {
-                // Responsive Shifting Logic
                 if (isPortrait) {
-                    // Portrait: Shift Tree DOWN, show Text TOP
                     const targetShiftY = height * 0.25; 
                     state.shiftY += (targetShiftY - state.shiftY) * 0.1;
                     if (Math.abs(targetShiftY - state.shiftY) < 1) {
-                        state.phase = 'typing';
-                        msgContainer.classList.add('typewriter-cursor');
+                        state.phase = 'typing'; msgContainer.classList.add('typewriter-cursor');
                     }
                 } else {
-                    // Landscape: Shift Tree RIGHT, show Text LEFT
                     const targetShiftX = width * 0.25;
                     state.shiftX += (targetShiftX - state.shiftX) * 0.15;
                     if (Math.abs(targetShiftX - state.shiftX) < 1) {
-                        state.phase = 'typing';
-                        msgContainer.classList.add('typewriter-cursor');
+                        state.phase = 'typing'; msgContainer.classList.add('typewriter-cursor');
                     }
                 }
             }
-
-            if (state.phase === 'typing') {
-                updateTyping();
-            }
+            if (state.phase === 'typing') { updateTyping(); }
         }
-
         ctx.restore(); 
         requestAnimationFrame(animate);
     }
 
-    // --- Interaction Handling (Touch + Mouse) ---
     function handleInput(e) {
         if (state.phase === 'floating') {
-            e.preventDefault(); // Stop zoom
+            e.preventDefault(); 
             let cx, cy;
-            if (e.touches) {
-                cx = e.touches[0].clientX;
-                cy = e.touches[0].clientY;
-            } else {
-                cx = e.clientX;
-                cy = e.clientY;
-            }
-
-            const dx = cx - balloon.x;
-            const dy = cy - balloon.y;
-            // Larger hit area for mobile
+            if (e.touches) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; } 
+            else { cx = e.clientX; cy = e.clientY; }
+            const dx = cx - balloon.x; const dy = cy - balloon.y;
             if (Math.sqrt(dx*dx + dy*dy) < 100) {
                 initAudio();
+                if (window.startMusic) { window.startMusic(); }
                 state.phase = 'falling';
                 instruction.style.opacity = 0;
             }
@@ -459,9 +338,13 @@
 
     canvas.addEventListener('touchstart', handleInput, {passive: false});
     canvas.addEventListener('mousedown', handleInput);
-
     animate();
-
 </script>
+
+<audio id="bg-music" loop>
+    <source src="music/background.mp3" type="audio/mpeg">
+</audio>
+<script src="music/music.js"></script>
+
 </body>
 </html>

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Road to 22</title>
     <style>
-        /* --- CSS Reset & Base Variables --- */
         :root {
             --primary-color: #ff6b81; 
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -51,7 +50,7 @@
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             z-index: 10;
             color: var(--text-color);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         h1 { margin-bottom: 1rem; font-weight: 300; letter-spacing: 2px; }
@@ -72,7 +71,6 @@
         }
         .time-box span { display: block; font-size: 0.8rem; opacity: 0.8; font-weight: normal;}
 
-        /* --- Selection Buttons --- */
         .choice-container {
             display: flex;
             gap: 15px;
@@ -100,7 +98,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- Input Section --- */
         .input-group { 
             position: relative; 
             width: 100%; 
@@ -108,7 +105,6 @@
             animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* --- Animations --- */
         @keyframes popIn {
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
@@ -160,7 +156,6 @@
             font-weight: bold;
         }
 
-        /* --- BACK BUTTON STYLES --- */
         .back-btn {
             background: none;
             border: none;
@@ -181,7 +176,6 @@
             transform: translateX(-3px);
         }
 
-        /* --- LOCK STATE CSS --- */
         .locked-mode .choice-btn,
         .locked-mode input, 
         .locked-mode .submit-btn {
@@ -243,29 +237,18 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        // const targetDate = new Date(2025, 11, 22, 0, 0, 0).getTime(); // Dec 22, 2025
-        const targetDate = new Date().getTime(); // FIX APPLIED HERE
+        const targetDate = new Date().getTime();
         const nextPageUrl = "level2.html"; 
         
-        // --- ANSWER DATABASE ---
-        // FIX APPLIED HERE: Lowercase answers for easier matching
-        const path2Answers = [
-            "americano", 
-            "iced americano",
-            "coffee"
-        ];
+        const path2Answers = [ "americano", "iced americano", "coffee" ];
 
-        // --- STATE MANAGEMENT ---
         let isTimeReached = false;
         let currentPathId = 0; 
 
-        // --- COUNTDOWN LOGIC ---
         const countdownInterval = setInterval(function() {
             const now = new Date().getTime();
             const distance = targetDate - now;
 
-            // UI Elements
             const gameCard = document.getElementById("gameCard");
             const inputField = document.getElementById("passInput");
             const btn = document.getElementById("unlockBtn");
@@ -294,19 +277,17 @@
             }
         }, 1000);
 
-        // --- PATH SELECTION LOGIC ---
         function choosePath(pathId) {
+            if (window.startMusic) { window.startMusic(); }
             if (!isTimeReached) return;
 
             currentPathId = pathId;
 
-            // Hide Choices, Show Input
             document.getElementById("choiceBlock").style.display = "none";
             document.getElementById("instructions").style.display = "none";
             document.getElementById("inputBlock").style.display = "block";
 
             const riddleText = document.getElementById("riddle-text");
-
             if (pathId === 1) {
                 riddleText.innerText = "Where did we meet for the first time and where did we go after meeting?";
             } else {
@@ -324,20 +305,16 @@
             btn.innerText = "Unlock";
         }
 
-        // --- NEW FUNCTION: GO BACK ---
         function goBack() {
-            // Reset Input
             const inputField = document.getElementById("passInput");
             inputField.value = "";
             document.getElementById("errorMsg").style.display = "none";
 
-            // Swap Views Back
             document.getElementById("inputBlock").style.display = "none";
             document.getElementById("choiceBlock").style.display = "flex";
             document.getElementById("instructions").style.display = "block";
         }
 
-        // --- PASSWORD CHECK LOGIC ---
         function checkPassword() {
             const input = document.getElementById("passInput").value.toLowerCase().trim();
             const errorMsg = document.getElementById("errorMsg");
@@ -349,7 +326,6 @@
                 }
             } 
             else if (currentPathId === 2) {
-                // Now works because path2Answers are lowercase
                 if (path2Answers.includes(input)) {
                     isCorrect = true;
                 }
@@ -359,15 +335,10 @@
                 errorMsg.style.display = "none";
                 document.getElementById("unlockBtn").innerText = "Unlocking...";
                 document.getElementById("unlockBtn").style.background = "#4cd137";
-                
-                setTimeout(() => {
-                    window.location.href = nextPageUrl; 
-                }, 1000);
+                setTimeout(() => { window.location.href = nextPageUrl; }, 1000);
             } else {
                 errorMsg.style.display = "block";
                 const card = document.querySelector(".card");
-                
-                // Shake Animation
                 card.style.transform = "translateX(10px)";
                 setTimeout(() => card.style.transform = "translateX(-10px)", 100);
                 setTimeout(() => card.style.transform = "translateX(0)", 200);
@@ -375,10 +346,15 @@
         }
 
         document.getElementById("passInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkPassword();
-            }
+            if (event.key === "Enter") { checkPassword(); }
         });
     </script>
+
+    <audio id="bg-music" loop>
+        <source src="music/background.mp3" type="audio/mpeg">
+    </audio>
+    <script src="music/music.js">
+    </script>
+
 </body>
 </html>
