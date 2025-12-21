@@ -167,22 +167,21 @@
         // --- CONFIGURATION: YOUR QUESTIONS AND ANSWERS ---
         // Edit this list! Make sure answers are lowercase.
         const quizData = [
-            { q: "What is my absolute favorite food?", a: "pritha" },     // Box 1
-            { q: "What is my shoe size?", a: "12" },                       // Box 2
-            { q: "Which football club do I support?", a: "manchester united" }, // Box 3
-            { q: "Which national football team do I support apart from India?", a: "france" },       // Box 4
-            { q: "Where did we first hold hands?", a: "sealdah station" },  // Box 5
-            { q: "What is my favorite color?", a: "grey" },               // Box 6
-            { q: "What was the first movie we watched together?", a: "jolly llb 3" },   // Box 7
-            { q: "What drink do I order at a cafe?", a: "iced americano" },                 // Box 8
-            { q: "If I wasn't a software engineer, what job would I want?", a: "banker" }        // Box 9
+            { q: "What is my absolute favorite food?", a: "pritha" },     
+            { q: "What is my shoe size?", a: "12" },                       
+            { q: "Which football club do I support?", a: "manchester united" }, 
+            { q: "Which national football team do I support apart from India?", a: "france" },       
+            { q: "Where did we first hold hands?", a: "sealdah station" },  
+            { q: "What is my favorite color?", a: "grey" },               
+            { q: "What was the first movie we watched together?", a: "jolly llb 3" },   
+            { q: "What drink do I order at a cafe?", a: "iced americano" },                 
+            { q: "If I wasn't a software engineer, what job would I want?", a: "banker" }        
         ];
 
         // --- GAME LOGIC ---
         let currentBoxIndex = null;
-        let boardState = [null, null, null, null, null, null, null, null, null]; // Tracks solved boxes
+        let boardState = [null, null, null, null, null, null, null, null, null]; 
         
-        // Winning combinations (rows, cols, diagonals)
         const winPatterns = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
@@ -196,6 +195,11 @@
         const feedback = document.getElementById('feedback');
 
         function handleClick(index) {
+            // --- NEW: Start Music on Interaction ---
+            if (window.startMusic) {
+                window.startMusic();
+            }
+
             // If already solved, do nothing
             if (boardState[index] === 'solved') return;
 
@@ -245,7 +249,7 @@
             boardState[index] = 'solved';
             boxes[index].classList.add('solved');
             boxes[index].classList.remove('number');
-            boxes[index].innerHTML = "❤️"; // Change number to heart
+            boxes[index].innerHTML = "❤️"; 
         }
 
         function checkWinCondition() {
@@ -273,6 +277,23 @@
             }
         });
 
+        // --- NEW: Force Music on Load ---
+        window.addEventListener('load', function() {
+            const audio = document.getElementById('bg-music');
+            audio.play().catch(function(error) {
+                console.log("Autoplay blocked, waiting for click");
+                document.body.addEventListener('click', function() {
+                    audio.play();
+                }, { once: true });
+            });
+        });
+
     </script>
+
+    <audio id="bg-music" loop>
+        <source src="music/background.mp3" type="audio/mpeg">
+    </audio>
+    <script src="music/music.js"></script>
+
 </body>
 </html>
