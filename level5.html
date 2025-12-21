@@ -230,6 +230,27 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
+
+        // --- NEW: Force Music on Load ---
+        window.addEventListener('load', function() {
+            const audio = document.getElementById('bg-music');
+            if(audio) {
+                // Try to play immediately (Works if she clicked link from previous page)
+                audio.play().catch(function(error) {
+                    console.log("Autoplay blocked, waiting for click");
+                    // Fallback: Play on first tap
+                    document.body.addEventListener('click', function() {
+                        audio.play();
+                    }, { once: true });
+                });
+            }
+        });
     </script>
+
+    <audio id="bg-music" loop>
+        <source src="music/background.mp3" type="audio/mpeg">
+    </audio>
+    <script src="music/music.js"></script>
+
 </body>
 </html>
