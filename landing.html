@@ -46,12 +46,12 @@
             border-radius: 20px;
             padding: 3rem;
             width: 90%;
-            max-width: 500px; /* Made slightly wider for 2 buttons */
+            max-width: 500px;
             text-align: center;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             z-index: 10;
             color: var(--text-color);
-            transition: transform 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
         }
 
         h1 { margin-bottom: 1rem; font-weight: 300; letter-spacing: 2px; }
@@ -72,12 +72,13 @@
         }
         .time-box span { display: block; font-size: 0.8rem; opacity: 0.8; font-weight: normal;}
 
-        /* --- New Selection Buttons --- */
+        /* --- Selection Buttons --- */
         .choice-container {
             display: flex;
             gap: 15px;
             justify-content: center;
             margin-bottom: 20px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .choice-btn {
@@ -99,16 +100,22 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- Input Section (Hidden Initially) --- */
+        /* --- Input Section --- */
         .input-group { 
             position: relative; 
             width: 100%; 
-            display: none; /* Hidden until choice is made */
-            animation: fadeIn 0.5s ease;
+            display: none; 
+            animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+
+        /* --- Animations --- */
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -151,6 +158,27 @@
             font-size: 0.9rem;
             display: none;
             font-weight: bold;
+        }
+
+        /* --- BACK BUTTON STYLES --- */
+        .back-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .back-btn:hover {
+            color: white;
+            transform: translateX(-3px);
         }
 
         /* --- LOCK STATE CSS --- */
@@ -199,6 +227,10 @@
         </div>
 
         <div class="input-group" id="inputBlock">
+            <button class="back-btn" onclick="goBack()">
+                ↩ Choose a different memory
+            </button>
+
             <p id="riddle-text" style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">
                 Question appears here...
             </p>
@@ -213,23 +245,20 @@
     <script>
         // --- CONFIGURATION ---
         // const targetDate = new Date(2025, 11, 22, 0, 0, 0).getTime(); // Dec 22, 2025
-        const targetDalte = new Date().getTime();
-        // const targetDalte = new Date().getTime();
+        const targetDate = new Date().getTime(); // FIX APPLIED HERE
         const nextPageUrl = "level2.html"; 
         
         // --- ANSWER DATABASE ---
-        // Path 2 still uses a list of exact acceptable answers
+        // FIX APPLIED HERE: Lowercase answers for easier matching
         const path2Answers = [
-            "Americano", 
-            "Iced americano",
+            "americano", 
             "iced americano",
-            "coffee",
-            "Coffee"
+            "coffee"
         ];
 
         // --- STATE MANAGEMENT ---
         let isTimeReached = false;
-        let currentPathId = 0; // Tracks which question is currently active (1 or 2)
+        let currentPathId = 0; 
 
         // --- COUNTDOWN LOGIC ---
         const countdownInterval = setInterval(function() {
@@ -246,7 +275,6 @@
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
             if (distance > 0) {
-                // LOCK STATE
                 isTimeReached = false;
                 gameCard.classList.add("locked-mode");
                 
@@ -259,7 +287,6 @@
                 btn.disabled = true;
                 btn.innerText = "Locked";
             } else {
-                // UNLOCK STATE
                 clearInterval(countdownInterval);
                 isTimeReached = true;
                 gameCard.classList.remove("locked-mode");
@@ -271,10 +298,9 @@
         function choosePath(pathId) {
             if (!isTimeReached) return;
 
-            // Save which path was chosen so we know how to check the answer later
             currentPathId = pathId;
 
-            // UI Updates
+            // Hide Choices, Show Input
             document.getElementById("choiceBlock").style.display = "none";
             document.getElementById("instructions").style.display = "none";
             document.getElementById("inputBlock").style.display = "block";
@@ -287,7 +313,6 @@
                 riddleText.innerText = "What beverage did I order for myself the first day we met?";
             }
 
-            // Enable Input
             const inputField = document.getElementById("passInput");
             const btn = document.getElementById("unlockBtn");
             
@@ -299,47 +324,56 @@
             btn.innerText = "Unlock";
         }
 
+        // --- NEW FUNCTION: GO BACK ---
+        function goBack() {
+            // Reset Input
+            const inputField = document.getElementById("passInput");
+            inputField.value = "";
+            document.getElementById("errorMsg").style.display = "none";
+
+            // Swap Views Back
+            document.getElementById("inputBlock").style.display = "none";
+            document.getElementById("choiceBlock").style.display = "flex";
+            document.getElementById("instructions").style.display = "block";
+        }
+
         // --- PASSWORD CHECK LOGIC ---
         function checkPassword() {
             const input = document.getElementById("passInput").value.toLowerCase().trim();
             const errorMsg = document.getElementById("errorMsg");
             let isCorrect = false;
             
-            // LOGIC FOR PATH 1: Keyword Matching
             if (currentPathId === 1) {
-                // Check if the input contains BOTH "tollygunge" AND "royal bengal tiger cafe"
-                // This allows sentences like: "We met at Tollygunge then went to Royal Bengal Tiger Cafe"
                 if (input.includes("tollygunge") && input.includes("royal bengal tiger cafe")) {
                     isCorrect = true;
                 }
             } 
-            // LOGIC FOR PATH 2: List Matching
             else if (currentPathId === 2) {
+                // Now works because path2Answers are lowercase
                 if (path2Answers.includes(input)) {
                     isCorrect = true;
                 }
             }
 
-            // HANDLE RESULT
             if (isCorrect) {
                 errorMsg.style.display = "none";
                 document.getElementById("unlockBtn").innerText = "Unlocking...";
                 document.getElementById("unlockBtn").style.background = "#4cd137";
                 
                 setTimeout(() => {
-                    // Redirect to Level 2
                     window.location.href = nextPageUrl; 
                 }, 1000);
             } else {
                 errorMsg.style.display = "block";
                 const card = document.querySelector(".card");
+                
+                // Shake Animation
                 card.style.transform = "translateX(10px)";
                 setTimeout(() => card.style.transform = "translateX(-10px)", 100);
                 setTimeout(() => card.style.transform = "translateX(0)", 200);
             }
         }
 
-        // Allow "Enter" key
         document.getElementById("passInput").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 checkPassword();
