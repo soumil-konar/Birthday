@@ -1,607 +1,467 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Road to 22</title>
-    <style>
-        /* --- CSS Reset & Base Variables --- */
-        :root {
-            --primary-color: #ff6b81; 
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text-color: #ffffff;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-        body {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-gradient);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            animation: float 10s infinite ease-in-out;
-            z-index: 0;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.1); }
-        }
-
-        .card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 3rem;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            z-index: 10;
-            color: var(--text-color);
-            transition: transform 0.3s ease;
-        }
-
-        h1 { margin-bottom: 1rem; font-weight: 300; letter-spacing: 2px; }
-        h2 { font-size: 2.5rem; margin-bottom: 1.5rem; font-weight: 700; }
-        p { margin-bottom: 2rem; opacity: 0.9; line-height: 1.6; }
-
-        #countdown {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-            font-weight: bold;
-        }
-        .time-box {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-            min-width: 60px;
-        }
-        .time-box span { display: block; font-size: 0.8rem; opacity: 0.8; font-weight: normal;}
-
-        .input-group { position: relative; width: 100%; }
-        
-        input {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 1rem;
-            outline: none;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        button {
-            margin-top: 1.5rem;
-            padding: 12px 40px;
-            border: none;
-            border-radius: 50px;
-            background: var(--primary-color);
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
-        }
-
-        button:hover { background: #ff4757; transform: scale(1.05); }
-
-        .error-msg {
-            color: #ff6b81;
-            background: rgba(255,255,255,0.9);
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            display: none;
-            font-weight: bold;
-        }
-
-        /* --- LOCK STATE CSS --- */
-        /* This class is added by JS when timer is running */
-        .locked-mode input, 
-        .locked-mode button {
-            opacity: 0.5;
-            pointer-events: none; /* Stops clicking */
-            cursor: not-allowed;
-            filter: grayscale(100%);
-        }
-        
-        .locked-mode #riddle-text {
-            filter: blur(4px); /* Blurs the question so she can't even see it yet */
-            user-select: none;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="particle" style="top: 10%; left: 20%; width: 50px; height: 50px;"></div>
-    <div class="particle" style="top: 70%; left: 80%; width: 80px; height: 80px; animation-duration: 15s;"></div>
-    <div class="particle" style="top: 40%; left: 60%; width: 30px; height: 30px; animation-duration: 12s;"></div>
-
-    <div class="card" id="gameCard">
-        <h1>LEVEL 01</h1>
-        <h2>The Gatekeeper</h2>
-        
-        <div id="countdown">
-            <div class="time-box"><div id="days">00</div><span>Days</span></div>
-            <div class="time-box"><div id="hours">00</div><span>Hours</span></div>
-            <div class="time-box"><div id="minutes">00</div><span>Mins</span></div>
-            <div class="time-box"><div id="seconds">00</div><span>Secs</span></div>
-        </div>
-
-        <p id="riddle-text">To enter the road to 22, tell me: <br><strong>Where did we have our first official date?</strong></p>
-
-        <div class="input-group">
-            <input type="password" id="passInput" placeholder="Wait for countdown..." disabled>
-            <div class="error-msg" id="errorMsg">Wrong answer, try again!</div>
-        </div>
-
-        <button id="unlockBtn" onclick="checkPassword()" disabled>Locked</button>
-    </div>
-
-    <script>
-        // --- CONFIGURATION ---
-        const targetDate = new Date(2025, 11, 22, 0, 0, 0).getTime(); // Dec 22, 2025
-        const correctAnswers = ["test"]; 
-        const nextPageUrl = "level2.html"; 
-        
-        let isTimeReached = false;
-
-        // --- COUNTDOWN LOGIC ---
-        const countdownInterval = setInterval(function() {
-            const now = new Date().getTime();
-            const distance = targetDate - now;
-
-            // Update Time Display
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Handle UI Locking
-            const gameCard = document.getElementById("gameCard");
-            const inputField = document.getElementById("passInput");
-            const btn = document.getElementById("unlockBtn");
-
-            if (distance > 0) {
-                // LOCK IT DOWN
-                isTimeReached = false;
-                gameCard.classList.add("locked-mode");
-                
-                // Update UI text
-                document.getElementById("days").innerText = days < 10 ? "0" + days : days;
-                document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
-                document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
-                document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
-                
-                // Force disable elements (extra safety)
-                inputField.disabled = true;
-                btn.disabled = true;
-                btn.innerText = "Locked";
-            } else {
-                // UNLOCK IT
-                clearInterval(countdownInterval);
-                isTimeReached = true;
-                
-                gameCard.classList.remove("locked-mode");
-                document.getElementById("countdown").innerHTML = "<h3>IT'S TIME! ✨</h3>";
-                
-                // Enable elements
-                inputField.disabled = false;
-                inputField.placeholder = "Type your answer...";
-                inputField.focus();
-                
-                btn.disabled = false;
-                btn.innerText = "Unlock";
-            }
-        }, 1000);
-
-        // --- PASSWORD LOGIC ---
-        function checkPassword() {
-            // Extra security check: Don't allow submission if time isn't up
-            if (!isTimeReached) {
-                alert("Nice try! Wait for the countdown. 😉");
-                return;
-            }
-
-            const input = document.getElementById("passInput").value.toLowerCase().trim();
-            const errorMsg = document.getElementById("errorMsg");
-            
-            if (correctAnswers.includes(input)) {
-                errorMsg.style.display = "none";
-                document.querySelector("button").innerText = "Unlocking...";
-                document.querySelector("button").style.background = "#4cd137";
-                
-                setTimeout(() => {
-                    // Redirect
-                    // window.location.href = nextPageUrl; 
-                    alert("Correct! Redirecting to Level 2..."); 
-                }, 1000);
-            } else {
-                errorMsg.style.display = "block";
-                const card = document.querySelector(".card");
-                card.style.transform = "translateX(10px)";
-                setTimeout(() => card.style.transform = "translateX(-10px)", 100);
-                setTimeout(() => card.style.transform = "translateX(0)", 200);
-            }
-        }
-
-        // Allow "Enter" key to submit
-        document.getElementById("passInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkPassword();
-            }
-        });
-    </script>
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Road to 22</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Pritha</title>
     <style>
-        /* --- CSS Reset & Base Variables --- */
-        :root {
-            --primary-color: #ff6b81; 
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text-color: #ffffff;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;1,700&display=swap');
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-        body {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-gradient);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            animation: float 10s infinite ease-in-out;
-            z-index: 0;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.1); }
-        }
-
-        .card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 3rem;
-            width: 90%;
-            max-width: 500px; /* Made slightly wider for 2 buttons */
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            z-index: 10;
-            color: var(--text-color);
-            transition: transform 0.3s ease;
-        }
-
-        h1 { margin-bottom: 1rem; font-weight: 300; letter-spacing: 2px; }
-        h2 { font-size: 2.5rem; margin-bottom: 1.5rem; font-weight: 700; }
-        p { margin-bottom: 2rem; opacity: 0.9; line-height: 1.6; }
-
-        #countdown {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-            font-weight: bold;
-        }
-        .time-box {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-            min-width: 60px;
-        }
-        .time-box span { display: block; font-size: 0.8rem; opacity: 0.8; font-weight: normal;}
-
-        /* --- New Selection Buttons --- */
-        .choice-container {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .choice-btn {
-            flex: 1;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 15px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .choice-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        /* --- Input Section (Hidden Initially) --- */
-        .input-group { 
-            position: relative; 
-            width: 100%; 
-            display: none; /* Hidden until choice is made */
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        input {
+        body, html {
+            margin: 0;
+            padding: 0;
             width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 1rem;
-            outline: none;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: 100%;
+            background-color: #050505;
+            overflow: hidden;
+            touch-action: none; /* Prevent zooming/scrolling on mobile */
         }
-
-        .submit-btn {
-            margin-top: 1.5rem;
-            padding: 12px 40px;
-            border: none;
-            border-radius: 50px;
-            background: var(--primary-color);
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
-
-        .submit-btn:hover { background: #ff4757; transform: scale(1.05); }
-
-        .error-msg {
-            color: #ff6b81;
-            background: rgba(255,255,255,0.9);
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            display: none;
-            font-weight: bold;
-        }
-
-        /* --- LOCK STATE CSS --- */
-        .locked-mode .choice-btn,
-        .locked-mode input, 
-        .locked-mode .submit-btn {
-            opacity: 0.5;
+        #instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 182, 193, 0.8);
+            font-family: sans-serif;
+            font-size: 4vmin; /* Responsive font size */
+            letter-spacing: 2px;
             pointer-events: none;
-            cursor: not-allowed;
-            filter: grayscale(100%);
-        }
-        
-        .locked-mode #instructions {
-            filter: blur(4px);
             user-select: none;
+            transition: opacity 0.5s;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+        #message-container {
+            position: absolute;
+            /* Layout handled by JS media queries logic */
+            color: #fff;
+            font-family: 'Courier Prime', monospace;
+            z-index: 5;
+            pointer-events: none;
+            text-shadow: 0 0 5px rgba(255, 105, 180, 0.5);
+        }
+        /* Portrait Layout (Mobile) */
+        .portrait-msg {
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            font-size: 5vmin;
+            line-height: 1.5;
+        }
+        /* Landscape Layout (Desktop) */
+        .landscape-msg {
+            top: 30%;
+            left: 10%;
+            width: 45%;
+            font-size: 3.5vmin;
+            line-height: 1.6;
         }
 
+        .typewriter-cursor::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+            color: #ff69b4;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="particle" style="top: 10%; left: 20%; width: 50px; height: 50px;"></div>
-    <div class="particle" style="top: 70%; left: 80%; width: 80px; height: 80px; animation-duration: 15s;"></div>
-    <div class="particle" style="top: 40%; left: 60%; width: 30px; height: 30px; animation-duration: 12s;"></div>
+    <div id="instruction">Tap the Heart</div>
+    <div id="message-container"></div>
+    <canvas id="canvas"></canvas>
 
-    <div class="card" id="gameCard">
-        <h1>LEVEL 01</h1>
-        <h2>The Gatekeeper</h2>
-        
-        <div id="countdown">
-            <div class="time-box"><div id="days">00</div><span>Days</span></div>
-            <div class="time-box"><div id="hours">00</div><span>Hours</span></div>
-            <div class="time-box"><div id="minutes">00</div><span>Mins</span></div>
-            <div class="time-box"><div id="seconds">00</div><span>Secs</span></div>
-        </div>
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const instruction = document.getElementById('instruction');
+    const msgContainer = document.getElementById('message-container');
 
-        <p id="instructions">Choose a memory to unlock the gate:</p>
+    // --- Performance Optimization: Cache Hearts ---
+    // Drawing bezier curves 1000 times a frame kills mobile battery/fps.
+    // We draw them once to small invisible canvases and reuse them.
+    const heartCache = {};
+    const romanticColors = ['#ff0055', '#ff4d88', '#ff99bb', '#cc0044', '#e60073', '#ffccdd', '#ff3366'];
 
-        <div class="choice-container" id="choiceBlock">
-            <button class="choice-btn" onclick="choosePath(1)">
-                📍 The First Meeting
-            </button>
-            <button class="choice-btn" onclick="choosePath(2)">
-                ☕ The First Sip
-            </button>
-        </div>
-
-        <div class="input-group" id="inputBlock">
-            <p id="riddle-text" style="font-weight: bold; margin-bottom: 15px; font-size: 1.1rem;">
-                Question appears here...
-            </p>
-            
-            <input type="password" id="passInput" placeholder="Wait for countdown..." disabled>
-            <div class="error-msg" id="errorMsg">Wrong answer, try again!</div>
-            
-            <button class="submit-btn" id="unlockBtn" onclick="checkPassword()" disabled>Locked</button>
-        </div>
-    </div>
-
-    <script>
-        // --- CONFIGURATION ---
-        const targetDate = new Date(2025, 11, 22, 0, 0, 0).getTime(); // Dec 22, 2025
-        // const targetDalte = new Date().getTime();
-        const nextPageUrl = "level2.html"; 
-        
-        // --- ANSWER DATABASE ---
-        // Path 2 still uses a list of exact acceptable answers
-        const path2Answers = [
-            "Americano", 
-            "Iced americano",
-            "iced americano",
-            "coffee",
-            "Coffee"
-        ];
-
-        // --- STATE MANAGEMENT ---
-        let isTimeReached = false;
-        let currentPathId = 0; // Tracks which question is currently active (1 or 2)
-
-        // --- COUNTDOWN LOGIC ---
-        const countdownInterval = setInterval(function() {
-            const now = new Date().getTime();
-            const distance = targetDate - now;
-
-            // UI Elements
-            const gameCard = document.getElementById("gameCard");
-            const inputField = document.getElementById("passInput");
-            const btn = document.getElementById("unlockBtn");
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            if (distance > 0) {
-                // LOCK STATE
-                isTimeReached = false;
-                gameCard.classList.add("locked-mode");
-                
-                document.getElementById("days").innerText = days < 10 ? "0" + days : days;
-                document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
-                document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
-                document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
-                
-                inputField.disabled = true;
-                btn.disabled = true;
-                btn.innerText = "Locked";
-            } else {
-                // UNLOCK STATE
-                clearInterval(countdownInterval);
-                isTimeReached = true;
-                gameCard.classList.remove("locked-mode");
-                document.getElementById("countdown").innerHTML = "<h3>IT'S TIME! ✨</h3>";
-            }
-        }, 1000);
-
-        // --- PATH SELECTION LOGIC ---
-        function choosePath(pathId) {
-            if (!isTimeReached) return;
-
-            // Save which path was chosen so we know how to check the answer later
-            currentPathId = pathId;
-
-            // UI Updates
-            document.getElementById("choiceBlock").style.display = "none";
-            document.getElementById("instructions").style.display = "none";
-            document.getElementById("inputBlock").style.display = "block";
-
-            const riddleText = document.getElementById("riddle-text");
-
-            if (pathId === 1) {
-                riddleText.innerText = "Where did we meet for the first time and where did we go after meeting?";
-            } else {
-                riddleText.innerText = "What beverage did I order for myself the first day we met?";
-            }
-
-            // Enable Input
-            const inputField = document.getElementById("passInput");
-            const btn = document.getElementById("unlockBtn");
-            
-            inputField.disabled = false;
-            inputField.placeholder = "Type your answer...";
-            inputField.focus();
-            
-            btn.disabled = false;
-            btn.innerText = "Unlock";
-        }
-
-        // --- PASSWORD CHECK LOGIC ---
-        function checkPassword() {
-            const input = document.getElementById("passInput").value.toLowerCase().trim();
-            const errorMsg = document.getElementById("errorMsg");
-            let isCorrect = false;
-            
-            // LOGIC FOR PATH 1: Keyword Matching
-            if (currentPathId === 1) {
-                // Check if the input contains BOTH "tollygunge" AND "royal bengal tiger cafe"
-                // This allows sentences like: "We met at Tollygunge then went to Royal Bengal Tiger Cafe"
-                if (input.includes("tollygunge") && input.includes("royal bengal tiger cafe")) {
-                    isCorrect = true;
-                }
-            } 
-            // LOGIC FOR PATH 2: List Matching
-            else if (currentPathId === 2) {
-                if (path2Answers.includes(input)) {
-                    isCorrect = true;
-                }
-            }
-
-            // HANDLE RESULT
-            if (isCorrect) {
-                errorMsg.style.display = "none";
-                document.getElementById("unlockBtn").innerText = "Unlocking...";
-                document.getElementById("unlockBtn").style.background = "#4cd137";
-                
-                setTimeout(() => {
-                    // Redirect to Level 2
-                    window.location.href = nextPageUrl; 
-                }, 1000);
-            } else {
-                errorMsg.style.display = "block";
-                const card = document.querySelector(".card");
-                card.style.transform = "translateX(10px)";
-                setTimeout(() => card.style.transform = "translateX(-10px)", 100);
-                setTimeout(() => card.style.transform = "translateX(0)", 200);
-            }
-        }
-
-        // Allow "Enter" key
-        document.getElementById("passInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkPassword();
-            }
+    function precomputeHearts() {
+        romanticColors.forEach(color => {
+            const c = document.createElement('canvas');
+            c.width = 50; // High res for scaling down
+            c.height = 50;
+            const cx = c.getContext('2d');
+            cx.translate(25, 25);
+            cx.scale(1.5, 1.5);
+            cx.beginPath();
+            cx.fillStyle = color;
+            cx.moveTo(0, 0);
+            cx.bezierCurveTo(-10, -10, -20, 5, 0, 25);
+            cx.bezierCurveTo(20, 5, 10, -10, 0, 0);
+            cx.fill();
+            heartCache[color] = c;
         });
-    </script>
+    }
+    precomputeHearts();
+
+    // --- Audio Context ---
+    let audioCtx;
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if(audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTypeSound() {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(600, t);
+        osc.frequency.exponentialRampToValueAtTime(100, t + 0.03); 
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.03);
+    }
+
+    let width, height, dpr;
+    let isPortrait = false;
+    
+    const TARGET_LEAVES = 800; // Slightly reduced for mobile stability (still looks dense)
+    const messages = [
+        "Hey Pritha ❤️",
+        "Happy Birthday 🎂",
+        "May God Bless u ✨",
+        "And give u happiness",
+        "Just saying... you're pretty 🫶"
+    ];
+
+    const state = {
+        phase: 'floating', 
+        frame: 0,
+        groundY: 0,
+        groundWidth: 0,
+        treeData: null,
+        growthProgress: 0,
+        shiftX: 0, 
+        shiftY: 0,
+        currentLineIndex: 0,
+        currentCharIndex: 0,
+        lastTypeTime: 0,
+        isRedirecting: false // New flag to prevent multiple timeouts
+    };
+
+    const balloon = {
+        x: 0, y: 0, baseY: 0, vy: 0, stringLen: 80, scaleX: 1, scaleY: 1
+    };
+
+    function resize() {
+        // High DPI handling
+        dpr = window.devicePixelRatio || 1;
+        width = window.innerWidth;
+        height = window.innerHeight;
+        
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr); // Normalize coord system
+        
+        isPortrait = height > width;
+        state.groundY = height - (isPortrait ? height * 0.15 : 50);
+
+        // Adjust Text Layout
+        msgContainer.className = isPortrait ? 'portrait-msg' : 'landscape-msg';
+
+        if (state.phase === 'floating') {
+            balloon.x = width / 2;
+            balloon.baseY = height / 2 - 100;
+            instruction.style.top = (balloon.baseY + 140) + 'px';
+        }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Optimized Draw Heart using Cache (Image Copying is fast!)
+    function drawHeart(ctx, x, y, size, color, rotation = 0) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        // Map size 1 to canvas size (cache is 50x50)
+        const scale = size * 0.5; 
+        ctx.scale(scale, scale);
+        // Draw the pre-rendered image centered
+        ctx.drawImage(heartCache[color], -25, -25);
+        ctx.restore();
+    }
+
+    // Manual draw for balloon (needs dynamic scaling)
+    function drawBalloonHeart(ctx, x, y, sx, sy, color) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(sx, sy);
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-10, -10, -20, 5, 0, 25);
+        ctx.bezierCurveTo(20, 5, 10, -10, 0, 0);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function generateTree(startX, startY) {
+        const branches = [];
+        const leaves = [];
+        // Scale tree based on screen size
+        const baseLength = isPortrait ? height * 0.12 : height * 0.15;
+
+        function grow(x, y, angle, length, depth, width) {
+            const endX = x + Math.cos(angle) * length;
+            const endY = y + Math.sin(angle) * length;
+
+            branches.push({
+                x: x, y: y, endX: endX, endY: endY, 
+                width: width, depth: depth, length: length
+            });
+
+            if (depth < 10) { 
+                const numBranches = Math.random() > 0.3 ? 2 : 3; 
+                for (let i = 0; i < numBranches; i++) {
+                    const newAngle = angle + (Math.random() * 1.4 - 0.7); 
+                    const newLen = length * (0.7 + Math.random() * 0.2);
+                    grow(endX, endY, newAngle, newLen, depth + 1, width * 0.7);
+                }
+            }
+        }
+        grow(startX, startY, -Math.PI / 2, baseLength, 0, isPortrait ? 10 : 14);
+
+        // Leaves Logic
+        const suitableBranches = branches.filter(b => b.depth >= 3);
+        let totalLen = 0;
+        suitableBranches.forEach(b => totalLen += b.length);
+
+        for (let i = 0; i < TARGET_LEAVES; i++) {
+            let randomPos = Math.random() * totalLen;
+            let targetBranch = null;
+            for (const branch of suitableBranches) {
+                if (randomPos <= branch.length) {
+                    targetBranch = branch;
+                    break;
+                }
+                randomPos -= branch.length;
+            }
+
+            if (targetBranch) {
+                const t = randomPos / targetBranch.length; 
+                const offset = (Math.random() - 0.5) * (isPortrait ? 20 : 30); 
+                const size = (Math.random() * 1.1 + 0.7); 
+
+                leaves.push({
+                    x: targetBranch.x + (targetBranch.endX - targetBranch.x) * t + offset,
+                    y: targetBranch.y + (targetBranch.endY - targetBranch.y) * t + offset,
+                    size: size,
+                    color: romanticColors[Math.floor(Math.random() * romanticColors.length)],
+                    rotation: Math.random() * Math.PI * 2,
+                    triggerDepth: targetBranch.depth
+                });
+            }
+        }
+
+        return { branches, leaves };
+    }
+
+    function updateTyping() {
+        // --- REDIRECTION LOGIC ADDED HERE ---
+        if (state.currentLineIndex >= messages.length) {
+            if (!state.isRedirecting) {
+                state.isRedirecting = true;
+                // Wait 5 seconds (5000ms), then redirect
+                setTimeout(() => {
+                    window.location.href = 'landing.html';
+                }, 5000);
+            }
+            return;
+        }
+
+        const now = Date.now();
+        if (now - state.lastTypeTime > 50) {
+            const currentString = messages[state.currentLineIndex];
+            if (state.currentCharIndex < currentString.length) {
+                const char = currentString[state.currentCharIndex];
+                let currentLineEl = msgContainer.children[state.currentLineIndex];
+                if (!currentLineEl) {
+                    currentLineEl = document.createElement('div');
+                    msgContainer.appendChild(currentLineEl);
+                }
+                currentLineEl.textContent += char;
+                playTypeSound();
+                state.currentCharIndex++;
+                state.lastTypeTime = now;
+            } else {
+                state.currentLineIndex++;
+                state.currentCharIndex = 0;
+                state.lastTypeTime = now + 250; 
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        state.frame++;
+
+        ctx.save();
+        // Camera Shift
+        ctx.translate(state.shiftX, state.shiftY);
+
+        if (state.phase === 'floating') {
+            const float = Math.sin(state.frame * 0.05) * 15;
+            balloon.y = balloon.baseY + float;
+            ctx.beginPath();
+            ctx.moveTo(balloon.x, balloon.y + 20);
+            ctx.quadraticCurveTo(balloon.x + Math.sin(state.frame * 0.1) * 10, balloon.y + balloon.stringLen/2, balloon.x, balloon.y + balloon.stringLen);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+            drawBalloonHeart(ctx, balloon.x, balloon.y, 3, 3, '#ff0044');
+        }
+        else if (state.phase === 'falling') {
+            balloon.vy += 0.8;
+            balloon.y += balloon.vy;
+            ctx.beginPath();
+            ctx.moveTo(balloon.x, balloon.y + 20);
+            ctx.lineTo(balloon.x, balloon.y + balloon.stringLen);
+            ctx.strokeStyle = '#fff'; ctx.stroke();
+            drawBalloonHeart(ctx, balloon.x, balloon.y, 3, 3, '#ff0044');
+            if (balloon.y >= state.groundY - 30) {
+                state.phase = 'splatting';
+                balloon.y = state.groundY - 30;
+                balloon.vy = 0;
+            }
+        }
+        else if (state.phase === 'splatting') {
+            balloon.scaleY -= 0.08; balloon.scaleX += 0.2; balloon.y += 3;
+            drawBalloonHeart(ctx, balloon.x, balloon.y, 3 * balloon.scaleX, 3 * balloon.scaleY, '#ff0044');
+            if (balloon.scaleY <= 0.1) state.phase = 'expanding';
+        }
+        else if (state.phase === 'expanding') {
+            state.groundWidth += width * 0.05; 
+            ctx.beginPath();
+            ctx.moveTo((width/2) - state.groundWidth/2, state.groundY);
+            ctx.lineTo((width/2) + state.groundWidth/2, state.groundY);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+            if (state.groundWidth >= width * 1.5) {
+                state.phase = 'growing';
+                state.treeData = generateTree(width/2, state.groundY);
+            }
+        }
+        else if (state.phase === 'growing' || state.phase === 'shifting' || state.phase === 'typing') {
+            ctx.beginPath();
+            ctx.moveTo(0 - width, state.groundY);
+            ctx.lineTo(width * 2, state.groundY);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+
+            if (state.growthProgress < 1) {
+                state.growthProgress += 0.0035; 
+            } else if (state.phase === 'growing') {
+                state.phase = 'shifting';
+            }
+
+            const { branches, leaves } = state.treeData;
+            const progressVal = state.growthProgress * 16; 
+
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#fff';
+
+            branches.forEach(b => {
+                if (progressVal > b.depth) {
+                    let bp = progressVal - b.depth;
+                    if (bp > 1) bp = 1;
+                    ctx.lineWidth = b.width;
+                    ctx.beginPath();
+                    ctx.moveTo(b.x, b.y);
+                    ctx.lineTo(b.x + (b.endX - b.x) * bp, b.y + (b.endY - b.y) * bp);
+                    ctx.stroke();
+                }
+            });
+
+            leaves.forEach(leaf => {
+                if (progressVal > leaf.triggerDepth + 1) {
+                    let size = leaf.size;
+                    let age = progressVal - (leaf.triggerDepth + 1);
+                    let popFactor = Math.min(1, age * 4); 
+                    size *= popFactor;
+                    const sway = Math.sin(Date.now()*0.001 + leaf.x * 0.01) * 0.2;
+                    // Use optimized drawer
+                    drawHeart(ctx, leaf.x, leaf.y, size, leaf.color, leaf.rotation + sway);
+                }
+            });
+
+            if (state.phase === 'shifting') {
+                // Responsive Shifting Logic
+                if (isPortrait) {
+                    // Portrait: Shift Tree DOWN, show Text TOP
+                    const targetShiftY = height * 0.25; 
+                    state.shiftY += (targetShiftY - state.shiftY) * 0.1;
+                    if (Math.abs(targetShiftY - state.shiftY) < 1) {
+                        state.phase = 'typing';
+                        msgContainer.classList.add('typewriter-cursor');
+                    }
+                } else {
+                    // Landscape: Shift Tree RIGHT, show Text LEFT
+                    const targetShiftX = width * 0.25;
+                    state.shiftX += (targetShiftX - state.shiftX) * 0.15;
+                    if (Math.abs(targetShiftX - state.shiftX) < 1) {
+                        state.phase = 'typing';
+                        msgContainer.classList.add('typewriter-cursor');
+                    }
+                }
+            }
+
+            if (state.phase === 'typing') {
+                updateTyping();
+            }
+        }
+
+        ctx.restore(); 
+        requestAnimationFrame(animate);
+    }
+
+    // --- Interaction Handling (Touch + Mouse) ---
+    function handleInput(e) {
+        if (state.phase === 'floating') {
+            e.preventDefault(); // Stop zoom
+            let cx, cy;
+            if (e.touches) {
+                cx = e.touches[0].clientX;
+                cy = e.touches[0].clientY;
+            } else {
+                cx = e.clientX;
+                cy = e.clientY;
+            }
+
+            const dx = cx - balloon.x;
+            const dy = cy - balloon.y;
+            // Larger hit area for mobile
+            if (Math.sqrt(dx*dx + dy*dy) < 100) {
+                initAudio();
+                state.phase = 'falling';
+                instruction.style.opacity = 0;
+            }
+        }
+    }
+
+    canvas.addEventListener('touchstart', handleInput, {passive: false});
+    canvas.addEventListener('mousedown', handleInput);
+
+    animate();
+
+</script>
 </body>
 </html>
